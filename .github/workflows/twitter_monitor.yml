@@ -1,0 +1,79 @@
+name: Twitter Feed Monitor
+
+on:
+  # ── GITHUB NATIVE SCHEDULE: DISABLED (2026-09-17) ────────────────────────
+  # It raced with the cron-job.org workflow_dispatch triggers: both checked
+  # out the same pre-cache commit, both posted the same tweet, and the 2nd
+  # cache push was rejected (non-fast-forward). cron-job.org is now the
+  # SINGLE scheduler for this monitor. To re-enable GitHub's own schedule,
+  # uncomment these two lines AND pause the cron-job.org job:
+  #   schedule:
+  #     - cron: '*/10 * * * *'
+  workflow_dispatch:          # allows manual + external-cron triggering
+    inputs:
+      test_tweet:
+        description: 'Optional TEST TWEET: rebuild ONE specific tweet, e.g. Wuthering_Waves/2100555373073797461 (nitter feed bypassed; same pipeline + cache). Leave empty for a normal run.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  check-twitter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Twitter Feed Monitor
+        env:
+          ACCOUNTS: ${{ secrets.ACCOUNTS }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          WEBHOOK_TYPEII_EN: ${{ secrets.WEBHOOK_TYPEII_EN }}
+          WEBHOOK_POMPOM_HONKAISR: ${{ secrets.WEBHOOK_POMPOM_HONKAISR }}
+          WEBHOOK_WUTHERING_WAVES: ${{ secrets.WEBHOOK_WUTHERING_WAVES }}
+          WEBHOOK_HONKAINA: ${{ secrets.WEBHOOK_HONKAINA }}
+          WEBHOOK_ANANTA_EN: ${{ secrets.WEBHOOK_ANANTA_EN }}
+          # Test tools (2026-09-17): manual runs only. TEST_TWEET_ID rebuilds
+          # one specific tweet via the direct FxTwitter path (nitter-free).
+          TEST_TWEET_ID: ${{ github.event.inputs.test_tweet }}
+          # Nitter RSS token (2026-09-17): nitter.miningtcup.me is behind a
+          # bot check. The emailed RSS token lives in the NITTER_RSS_TOKEN
+          # repo SECRET (Settings -> Secrets and variables -> Actions ->
+          # Secrets -> NITTER_RSS_TOKEN) — GitHub masks secret values in
+          # every log line, so it can never print in the Actions log.
+          # The next run picks it up, no code change.
+          # Empty = the chain just skips that instance.
+          NITTER_RSS_TOKEN: ${{ secrets.NITTER_RSS_TOKEN }}
+        # ───────────────────────────────────────────────────────────────────
+        # TESTING AREA (how updates ship):
+        # • A new/changed script lives in "testing area/" FIRST (e.g.
+        #   twitter_v3.py). Point this line at the test copy — THE QUOTES
+        #   ARE REQUIRED (the folder name contains a space):
+        #       run: python "testing area/twitter_v3.py"
+        # • Check BOTH the Discord post(s) AND this workflow's log.
+        # • Switch between engines by pointing the run line to:
+        #       run: python twitter_v1.py                              <- V1 (plain, no API key)
+        #       run: python "testing area/twitter_v2_button_outside.py" <- V2 (card, buttons outside)
+        #       run: python "testing area/twitter_v3.py"                <- V3 (card, buttons nested)
+        # ───────────────────────────────────────────────────────────────────
+        run: python "testing area/twitter_v3.py"   # ← switch to twitter_v1.py / twitter_v2_button_outside.py here
+
+      - name: Commit and push updated posted_tweets.json cache
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -f posted_tweets.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "auto: update posted_tweets.json cache" && git push)
