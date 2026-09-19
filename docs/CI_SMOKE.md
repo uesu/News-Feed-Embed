@@ -21,7 +21,7 @@
 
 | Question | Answer |
 |---|---|
-| Does the *monitor itself* import ci.yml? | No — `reddit_monitor_v3.yml` never calls it. The monitor runs fine with ci.yml deleted. |
+| Does the *monitor itself* import ci.yml? | No — `reddit_monitor.yml` never calls it. The monitor runs fine with ci.yml deleted. |
 | So why is it required here? | Because this repo ships **Dependabot** (+ opt-in **auto-merge**) and a multi-file **testing-area workflow**. The CI job is the gate those rely on: Dependabot's auto-merge (and the 60-second manual review in `docs/DEPENDABOT.md` §7) is defined as "green checks + one-line diff = safe". **No CI = no green check = auto-merge must be turned off** and every PR (including your own pastes) loses its fast safety net. |
 | What catches what? | A dependency bump that renames an API → `pip install` or the import check fails **before merge**. A paste that mangles a file (the round-12 backslash incident!) → `compileall` or the import check fails in ~15 s — **before any cron run can post** a broken card. |
 | Does it post to Discord? | Never. It has no webhook, no secrets, no network access (the test deliberately runs offline with stubbed `aiohttp`/`feedparser`/`dotenv`). |
@@ -34,8 +34,9 @@
   without the real environment: `aiohttp`, `feedparser` and `dotenv` are
   stubbed if not installed, and no check opens a connection.
 * **Import gate for every engine** — all monitor scripts
-  (`twitter_v1.py`, the X V2/V3 test copies + the `twitter_proxy.py` fallback
-  module, Reddit V1/V2/V3, `video_diag.py`) must import without error.
+  (`testing area/twitter_v1.py`, the X V2/V3 test copies + the
+  `testing area/twitter_proxy.py` fallback module, Reddit V1/V2/V3,
+  `testing area/video_diag.py`) must import without error.
   This is the check that fails on a mangled paste or a breaking dependency
   bump.
 * **Pipeline checks** — the Reddit V3 card logic is exercised with fixtures

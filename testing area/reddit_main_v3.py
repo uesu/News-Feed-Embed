@@ -246,7 +246,7 @@ MININGTCUP_TOKEN = os.getenv("NITTER_RSS_TOKEN", "").strip()
 REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID", "").strip()
 REDDIT_CLIENT_SECRET = os.getenv("REDDIT_CLIENT_SECRET", "").strip()
 # Reddit requires a descriptive User-Agent for OAuth API calls.
-REDDIT_API_USER_AGENT = "python:uesu.news-feed-embed:v3 (personal rss monitor)"
+REDDIT_API_USER_AGENT = "python:uesu.news-express:v3 (personal rss monitor)"
 
 CACHE_FILE = "posted_reddit.json"
 MAX_CACHE_SIZE = 500
