@@ -1,4 +1,4 @@
-# News Feed Embed — X (Twitter) + Reddit RSS → Discord Monitor (Multi-Webhook Edition)
+# News Express — X (Twitter) + Reddit RSS → Discord Monitor (Multi-Webhook Edition)
 
 A lightweight, **100% serverless** bot that monitors public **X (Twitter)** accounts and **subreddits**
 via RSS mirrors, then posts new items to **different Discord channels** (one webhook per account/subreddit)
@@ -91,15 +91,15 @@ and to [@dangered wolf](https://github.com/dangeredwolf), creator and lead devel
 │   ├── dependabot.yml             # Dependabot: weekly pip + actions update PRs (optional)
 │   └── workflows/
 │       ├── twitter_monitor.yml    # X/Twitter — runs testing area/twitter_v3.py (V3)
-│       ├── reddit_monitor_v3.yml  # Reddit V3 (ACTIVE) — runs testing area/reddit_main_v3.py
+│       ├── reddit_monitor.yml     # Reddit (ACTIVE) — runs testing area/reddit_main_v3.py
 │       ├── ci.yml                 # PR gate: install + compile + offline smoke test
 │       └── dependabot_auto_merge.yml  # opt-in auto-merge for Dependabot PRs (repo Variable)
 ├── docs/
 │   ├── DEPENDABOT.md              # full plain-English Dependabot explanation
 │   ├── DISCOHOOK.md               # Discohook: what it's for, fully optional, safe to disable
 │   └── CI_SMOKE.md                # ci.yml + test_smoke.py: the required offline safety gate
-├── twitter_v1.py                  # X/Twitter — V1 (production copy)
 ├── testing area/                  # tested copies of every engine (see Testing area guide)
+│   ├── twitter_v1.py              # X/Twitter — V1 (plain, no API key)
 │   ├── twitter_v2_button_outside.py     # X V2 (buttons outside)
 │   ├── twitter_v3.py              # X V3 (buttons inside — ACTIVE)
 │   ├── twitter_proxy.py           # X V3 tweet-data fallback chain (round 11: fxtwitter/fixupx/vxtwitter/twitterez)
@@ -121,9 +121,9 @@ and to [@dangered wolf](https://github.com/dangeredwolf), creator and lead devel
 ```
 
 > **Engine layout note:** by default, production workflows run proven engines directly
-> from their canonical paths (`twitter_v1.py` at repo root, `testing area/twitter_v3.py`,
+> from their canonical paths (`testing area/twitter_v1.py`, `testing area/twitter_v3.py`,
 > and `testing area/reddit_main_v3.py`). You can switch engines at any time by editing the
-> workflow's `run:` line to point to the desired file (`twitter_v1.py`,
+> workflow's `run:` line to point to the desired file (`testing area/twitter_v1.py`,
 > `testing area/twitter_v2_button_outside.py`, `testing area/twitter_v3.py`,
 > `testing area/reddit_main.py`, `testing area/reddit_main_v2_embedez.py`, or
 > `testing area/reddit_main_v3.py`).
@@ -145,7 +145,7 @@ Every new or changed script is proven **before** it touches production. The proc
    - the actual post(s) in Discord (layout, buttons, media), **and**
    - the workflow log (Actions tab) — every skipped source/instance is logged there.
 4. **Once both look right, point the workflow's `run:` line to your preferred active engine:**
-   - For X/Twitter: `twitter_v1.py`, `"testing area/twitter_v2_button_outside.py"`, or `"testing area/twitter_v3.py"`
+   - For X/Twitter: `"testing area/twitter_v1.py"`, `"testing area/twitter_v2_button_outside.py"`, or `"testing area/twitter_v3.py"`
    - For Reddit: `"testing area/reddit_main.py"`, `"testing area/reddit_main_v2_embedez.py"`, or `"testing area/reddit_main_v3.py"`
 5. Commit. Production is updated; the test file can stay or be deleted.
 
@@ -167,12 +167,12 @@ All three do the same job with the same multi-webhook routing and translation �
 | Buttons | Action row below the embed | Action row **outside/below** the container | Action row **nested inside** the container |
 | Data source | RSS + FxTwitter API (light, lang check only) | RSS + FxTwitter API (full tweet JSON) | RSS + FxTwitter API (full tweet JSON) |
 | Custom accent color | n/a | ✅ (per-tweet `color`) | ✅ (per-tweet `color`) |
-| Switch to it | `run: python twitter_v1.py` | `run: python "testing area/twitter_v2_button_outside.py"` | `run: python "testing area/twitter_v3.py"` |
+| Switch to it | `run: python "testing area/twitter_v1.py"` | `run: python "testing area/twitter_v2_button_outside.py"` | `run: python "testing area/twitter_v3.py"` |
 
 **To switch versions:** open `.github/workflows/twitter_monitor.yml` and change the run line:
 
 ```yaml
-# run: python twitter_v1.py                              # V1
+# run: python "testing area/twitter_v1.py"               # V1
 # run: python "testing area/twitter_v2_button_outside.py" # V2
 run: python "testing area/twitter_v3.py"                 # V3 (active)
 ```
@@ -573,7 +573,7 @@ jobs:
         # While testing a new version, point this line at the test copy instead
         # (QUOTES REQUIRED — the folder name has a space):
         #   run: python "testing area/twitter_v3.py"
-        run: python "testing area/twitter_v3.py"   # ← switch to twitter_v1.py / twitter_v2_button_outside.py here
+        run: python "testing area/twitter_v3.py"   # ← switch to testing area/twitter_v1.py / twitter_v2_button_outside.py here
 
       - name: Commit and push updated posted_tweets.json cache
         run: |
@@ -897,7 +897,7 @@ infrastructure, so it is very likely such a pass (unverified on redlib —
 runs so far show the WAF still rejecting it from GitHub Actions; the
 operator has been emailed). The same repo secret
 **`NITTER_RSS_TOKEN`** (already set for the Twitter monitor) is now
-wired into `reddit_monitor_v3.yml` too, and V3 appends it as `?token=`
+wired into `reddit_monitor.yml` too, and V3 appends it as `?token=`
 to every `redlib.miningtcup.me` request — feeds and post pages alike
 (the query-param convention the operator confirmed for nitter).
 
@@ -971,15 +971,15 @@ all expected media were retrieved.
 
 **Step 0 — one-time: archive the OLD Reddit V1/V2 workflow (if previously enabled).**
 In the **Actions** tab, if the old workflow named **"Reddit Feed Monitor"**
-(the old V1 one, formerly `reddit_monitor.yml`, now replaced by `reddit_monitor_v3.yml`) is listed → its three-dot menu →
+(the old V1 one — its file was also named `reddit_monitor.yml`, a name the V3 monitor has since taken) is listed → its three-dot menu →
 **Archive workflow**. It targeted the same channels and the same
 `posted_reddit.json` dedup cache as V3, so every time GitHub's native cron
 fired it, it would post the same new post in the OLD plain style and
 "steal" it from V3. (Your external cron-job.org trigger should point at
-**"Reddit Feed V3 Monitor"** — `reddit_monitor_v3.yml` — not the old one.)
+**"Reddit Feed Monitor"** — `reddit_monitor.yml` — not the old one.)
 
 Everything is triggered from the repo's **Actions** tab → workflow
-**"Reddit Feed V3 Monitor"** → the **Run workflow** button (branch `main`).
+**"Reddit Feed Monitor"** → the **Run workflow** button (branch `main`).
 
 **Step 1 — Dry run (safety check; nothing is posted)**
 
@@ -1023,9 +1023,9 @@ channel check:
 
 **Step 4 — Active engine & switching**
 
-By default, `.github/workflows/reddit_monitor_v3.yml` runs the active V3 engine:
+By default, `.github/workflows/reddit_monitor.yml` runs the active V3 engine:
 `python "testing area/reddit_main_v3.py"`.
-To switch to V1 or V2, change the run line in `.github/workflows/reddit_monitor_v3.yml`:
+To switch to V1 or V2, change the run line in `.github/workflows/reddit_monitor.yml`:
 * `run: python "testing area/reddit_main.py"` (V1, free mirror link)
 * `run: python "testing area/reddit_main_v2_embedez.py"` (V2, rich card via EmbedEZ key)
 * `run: python "testing area/reddit_main_v3.py"` (V3, native rich card, no key)
@@ -1053,10 +1053,10 @@ with none of them set):
 | `DISCOHOOK_PREVIEW` | on | `0` = don't create/log the per-card Discohook share-link preview |
 | `FEEDTOKEN_JSON_STAGGER` | `65` | seconds between feed-token `.json` attempts (lower only if your token reliably works there) |
 
-### The workflow (`.github/workflows/reddit_monitor_v3.yml`)
+### The workflow (`.github/workflows/reddit_monitor.yml`)
 
 ```yaml
-name: Reddit Feed V3 Monitor
+name: Reddit Feed Monitor
 
 on:
   workflow_dispatch:          # allows manual + external-cron triggering
@@ -1093,7 +1093,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Reddit V3 Feed Monitor
+      - name: Run Reddit Feed Monitor
         env:
           SUBREDDITS: ${{ secrets.SUBREDDITS }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -1138,7 +1138,7 @@ by design). Proxy warm-up states are tracked in `proxy_health.json`.
   1. Repo → **Settings → Secrets and variables → Actions → *Variables* tab** → new variable
      **`REDDIT_MIRROR`** = `embeddit.deltandy.me` or `vxreddit.com` (full `https://…/` URLs are
      tolerated; they're normalized down to the host).
-  2. In `reddit_monitor_v3.yml` make sure the env block contains
+  2. In `reddit_monitor.yml` make sure the env block contains
      `REDDIT_MIRROR: ${{ vars.REDDIT_MIRROR }}` (if running V1).
   3. Next run uses the new mirror. Switch back anytime by setting the variable to `redditez.com`
      (or deleting it).
@@ -1377,7 +1377,7 @@ author's "Manually run by …" pattern with a free external cron:
 2. Sign up at [cron-job.org](https://cron-job.org) (free) and create a job **per workflow**:
    * **URL:**
      `https://api.github.com/repos/<YOU>/<REPO>/actions/workflows/twitter_monitor.yml/dispatches`
-     (and a second job for `reddit_monitor_v3.yml`)
+     (and a second job for `reddit_monitor.yml`)
    * **Method:** `POST` · **Crontab:** `*/10 * * * *`
    * **Headers:**
      | Key | Value |
@@ -1408,7 +1408,7 @@ For any **new or updated script**, test it from the `testing area/` folder first
 ## (Optional) Render Cron instead of GitHub Actions
 
 Create a **Cron Job** on Render: build `pip install -r requirements.txt`, command
-`python "testing area/twitter_v3.py"` (or `python twitter_v1.py` / any other engine file), schedule `*/10 * * * *`, and add the same env vars there.
+`python "testing area/twitter_v3.py"` (or `python "testing area/twitter_v1.py"` / any other engine file), schedule `*/10 * * * *`, and add the same env vars there.
 
 ---
 
@@ -1443,7 +1443,7 @@ REDDIT_FEED_TOKEN=           # optional (recommended) — old.reddit.com/prefs/f
 ```
 
 Then run any engine:
-* **X/Twitter:** `python twitter_v1.py` / `python "testing area/twitter_v2_button_outside.py"` / `python "testing area/twitter_v3.py"`
+* **X/Twitter:** `python "testing area/twitter_v1.py"` / `python "testing area/twitter_v2_button_outside.py"` / `python "testing area/twitter_v3.py"`
 * **Reddit:** `python "testing area/reddit_main.py"` / `python "testing area/reddit_main_v2_embedez.py"` / `python "testing area/reddit_main_v3.py"`
 
 > When a script sits in `testing area/`, quote the path (the space):

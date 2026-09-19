@@ -1,7 +1,7 @@
 # Terms of Service
 
 **Effective date:** September 11, 2026 (updated September 15, 2026 for Reddit V3 round 12; updated September 17, 2026 for the X V3 tweet-data fallback chain and the Arctic Shift search backup)
-**Applies to:** the *News Feed Embed* / *Citlali News* X (Twitter) + Reddit → Discord monitor
+**Applies to:** the *News Express* / *Citlali News* X (Twitter) + Reddit → Discord monitor
 ("the Service"), an open-source, self-hosted automation tool.
 
 ---
