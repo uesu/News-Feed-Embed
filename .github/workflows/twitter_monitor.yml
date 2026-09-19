@@ -1,5 +1,16 @@
 name: Twitter Feed Monitor
 
+concurrency:
+  # P0 DOUBLE-POST FIX (2026-09-19): same reason as the Reddit monitor —
+  # a trigger arriving mid-run QUEUES and starts later, checking out the
+  # NEWEST main (with the first run's fresh posted_tweets.json) so the
+  # dedup cache skips everything already posted.
+  # cancel-in-progress MUST stay false: a run can sit between "Discord
+  # posted" and "cache committed" — cancelling it there would lose the
+  # cache update and allow a re-post.
+  group: check-twitter-${{ github.ref }}
+  cancel-in-progress: false
+
 on:
   # ── GITHUB NATIVE SCHEDULE: DISABLED (2026-09-17) ────────────────────────
   # It raced with the cron-job.org workflow_dispatch triggers: both checked
